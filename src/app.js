@@ -10,8 +10,8 @@ app.use(express.json());
 
 app.use("/api", authRoutes);
 app.use("/api/orders", orderRoutes);
-app.use("/api/truck", truckRoutes);
-app.use("/api/location", locationRoutes);
+app.use("/api/trucks", truckRoutes);
+app.use("/api/locations", locationRoutes);
 
 app.get("/", (req, res) => {
   res.json({
