@@ -3,6 +3,7 @@ const app = express();
 const authRoutes = require("./routes/authRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const truckRoutes = require("./routes/truckRoutes");
+const locationRoutes = require("./routes/locationRoutes");
 const errorMiddleware = require("./middlewares/errorMiddleware");
 
 app.use(express.json());
@@ -10,6 +11,7 @@ app.use(express.json());
 app.use("/api", authRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/truck", truckRoutes);
+app.use("/api/location", locationRoutes);
 
 app.get("/", (req, res) => {
   res.json({

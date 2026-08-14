@@ -3,6 +3,7 @@ const Order = require("../models/Order");
 
 exports.createOrder = async (req, res, next) => {
   try {
+    console.log("--> Request Body yang diterima:", req.body);
     const { item, lat, lng } = req.body;
 
     if (!item || lat === undefined || lng === undefined) {
@@ -16,12 +17,14 @@ exports.createOrder = async (req, res, next) => {
       item,
       destination: {
         type: "Point",
-        coorinates: [parseFloat(lng), parseFloat(lat)],
+        coordinates: [parseFloat(lng), parseFloat(lat)],
       },
       user: req.user._id,
     });
 
-    res.status(200).json({
+    await order.save();
+
+    return res.status(200).json({
       success: true,
       data: order,
     });
@@ -127,14 +130,14 @@ exports.orderDelete = async (req, res, next) => {
 
 exports.updateStatus = async (req, res, next) => {
   try {
-    const { status } = req.body;
+    const { status, truckId } = req.body;
     const order = await Order.findOne({
       _id: req.params.id,
       user: req.user._id,
     });
 
     if (!order) {
-      res.status(404).json({
+      return res.status(404).json({
         status: false,
         message: "Order tidak ditemukan",
       });
@@ -156,9 +159,14 @@ exports.updateStatus = async (req, res, next) => {
     }
 
     order.status = status;
+
+    if (status === "start" && truckId) {
+      order.truck = truckId;
+    }
+
     await order.save();
 
-    res.json({
+    return res.json({
       success: true,
       data: order,
     });

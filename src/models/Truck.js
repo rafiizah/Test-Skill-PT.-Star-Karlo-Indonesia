@@ -34,4 +34,6 @@ const truckSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+truckSchema.index({ location: "2dsphere" });
+
 module.exports = mongoose.model("Truck", truckSchema);

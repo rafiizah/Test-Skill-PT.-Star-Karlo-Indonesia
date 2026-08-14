@@ -16,4 +16,6 @@ router
   .put(truckController.updateTruck)
   .delete(truckController.deleteTruck);
 
+router.patch("/:id/location", truckController.updateTruckLocation);
+
 module.exports = router;

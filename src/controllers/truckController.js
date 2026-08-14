@@ -1,4 +1,6 @@
+const turf = require("@turf/turf");
 const Truck = require("../models/Truck");
+const Order = require("../models/Order");
 
 exports.createTruck = async (req, res, next) => {
   try {
@@ -134,6 +136,86 @@ exports.deleteTruck = async (req, res, next) => {
     res.json({
       success: true,
       data: truck,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.updateTruckLocation = async (req, res, next) => {
+  try {
+    const { lat, lng } = req.body;
+
+    if (lat === undefined && lng === undefined) {
+      return res.status(404).json({
+        success: false,
+        message: "Field lat dan lng wajib diisi",
+      });
+    }
+
+    newCoordinates = [parseFloat(lng), parseFloat(lat)];
+
+    const truck = await Truck.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        owner: req.user._id,
+      },
+      {
+        location: {
+          type: "Point",
+          coordinates: newCoordinates,
+        },
+      },
+      { returnDocument: "after" },
+    );
+
+    if (!truck) {
+      return res.status(404).json({
+        success: false,
+        message: "Truck tidak ditemukan",
+      });
+    }
+
+    const linkOrder = await Order.findOne({
+      truck: truck._id,
+      status: "start",
+      user: req.user._id,
+    });
+
+    let geofenceResult = {
+      hasActiveOrder: false,
+      message: "Truck tidak membawa order aktif dengan status 'start'.",
+    };
+
+    if (linkOrder) {
+      const truckPoint = turf.point(newCoordinates);
+      const destinationPoint = turf.point(linkOrder.destination.coordinates);
+      const distanceMeters = turf.distance(truckPoint, destinationPoint, {
+        units: "meters",
+      });
+
+      const GEOFENCE_THRESHOLD_METERS = 100;
+      const isInside = distanceMeters <= GEOFENCE_THRESHOLD_METERS;
+
+      geofenceResult = {
+        hasActiveOrder: true,
+        orderId: linkOrder._id,
+        item: linkOrder.item,
+        distanceToDestination: `${Math.round(distanceMeters)} meter`,
+        event: isInside ? "ARRIVED" : "DEPARTED / END ROUTE",
+        description: isInside
+          ? `Truk TIBA di area tujuan pengiriman (radius <= ${GEOFENCE_THRESHOLD_METERS}m).`
+          : `Truk BERANGKAT / DI LUAR area tujuan pengiriman (radius > ${GEOFENCE_THRESHOLD_METERS}m).`,
+      };
+    }
+
+    return res.json({
+      success: true,
+      message: "Lokasi truk berhasil diperbarui.",
+      data: {
+        truck,
+        geofence: geofenceResult,
+      },
     });
   } catch (error) {
     next(error);

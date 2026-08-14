@@ -2,7 +2,10 @@ const mongoose = require("mongoose");
 
 const orderSchema = new mongoose.Schema(
   {
-    item: { type: String, required: true },
+    item: {
+      type: String,
+      required: true,
+    },
     status: {
       type: String,
       enum: ["created", "start", "done"],
@@ -20,8 +23,15 @@ const orderSchema = new mongoose.Schema(
       },
     },
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    truck: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Truck",
+      default: null,
+    },
   },
   { timestamps: true },
 );
+
+orderSchema.index({ destination: "2dsphere" });
 
 module.exports = mongoose.model("Order", orderSchema);
